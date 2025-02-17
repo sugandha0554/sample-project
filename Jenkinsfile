@@ -1,58 +1,55 @@
+
+
+
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'sanjeevkt720/jenkins-flask-app'
+        IMAGE_NAME = 'srinuedupoly/srinujenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-        KUBECONFIG = credentials('kubeconfig-credentials-id')
-
     }
     stages {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/kodekloudhub/jenkins-project.git', branch: 'main'
+                git url: 'https://github.com/srinuedupoly/sample-project', branch: 'main'
                 sh "ls -ltr"
             }
         }
+
         stage('Setup') {
             steps {
-                sh "pip install -r requirements.txt"
+                sh "bash -c 'python3 -m venv venv && source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'"
             }
         }
+
         stage('Test') {
             steps {
-                sh "pytest"
-                sh "whoami"
+                sh "bash -c 'source venv/bin/activate && pytest && whoami'"
             }
         }
-        stage('Login to docker hub') {
+
+        stage('Login to Docker Hub') {
             steps {
-                withCredentials([string(credentialsId: 'dockerhubpwd', variable: 'dockerhubpwd')]) {
-                sh 'echo ${dockerhubpwd} | docker login -u sanjeevkt720 --password-stdin'}
-                echo 'Login successfully'
+                script {
+                    echo "Attempting to log in to Docker Hub..."
+                }
+                withCredentials([usernamePassword(credentialsId: 'dockerhubpwd', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                }
+                echo 'Login successful'
             }
         }
-        stage('Build Docker Image')
-        {
-            steps
-            {
-                sh 'docker build -t ${IMAGE_TAG} .'
-                echo "Docker image build successfully"
-                sh "docker images"
-            }
-        }
-        stage('Push Docker Image')
-        {
-            steps
-            {
-                sh 'docker push ${IMAGE_TAG}'
-                echo "Docker image push successfully"
-            }
-        }
-        stage('Deploy to EKS Cluster') {
+
+        stage('Build Docker Image') {
             steps {
-                sh "kubectl apply -f deployment.yaml"
-                echo "Deployed to EKS Cluster"
+                sh "bash -c 'docker build -t ${IMAGE_TAG} . && echo Docker image built successfully && docker images'"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${IMAGE_TAG}"
+                echo "Docker image pushed successfully"
             }
         }
     }
