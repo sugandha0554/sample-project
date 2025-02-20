@@ -2,14 +2,14 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'srinuedupoly/srinujenkins-flask-app'
+        IMAGE_NAME = 'sugandha05/srinujenkins-flask-app'
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
     }
     stages {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/srinuedupoly/sample-project', branch: 'main'
+                git url: 'https://github.com/sugandha0554/sample-project', branch: 'main'
                 sh "ls -ltr"
             }
         }
